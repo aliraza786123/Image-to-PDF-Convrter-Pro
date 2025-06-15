@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image to PDF Converter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .dropzone {
+            border: 2px dashed #ccc;
+            transition: all 0.3s;
+        }
+        .dropzone.active {
+            border-color: #4f46e5;
+            background-color: rgba(79, 70, 229, 0.05);
+        }
+        .image-preview {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .image-preview:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .dragging {
+            opacity: 0.5;
+        }
+        .dark .dropzone {
+            border-color: #4b5563;
+        }
+        .dark .dropzone.active {
+            border-color: #818cf8;
+            background-color: rgba(129, 140, 248, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen transition-colors duration-200">
+    <div class="container mx-auto px-4 py-8">
+        <header class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-indigo-600 dark:text-indigo-400">Image to PDF Converter</h1>
+            <button id="theme-toggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700">
+                <svg id="theme-icon-dark" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+                <svg id="theme-icon-light" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+            </button>
+        </header>
+
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-8 transition-colors duration-200">
+            <h2 class="text-xl font-semibold mb-4">Convert Images to PDF</h2>
+            <p class="text-gray-600 dark:text-gray-300 mb-6">Upload your images and convert them to a single PDF document with customizable settings.</p>
+            
+            <div id="dropzone" class="dropzone rounded-lg p-8 text-center cursor-pointer mb-6">
+                <input type="file" id="file-input" class="hidden" accept="image/*" multiple>
+                <div class="flex flex-col items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-indigo-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <p class="text-lg font-medium">Drag & drop images here or click to browse</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Supports JPG, PNG, WEBP, etc.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="pdf-title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">PDF Title</label>
+                    <input type="text" id="pdf-title" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700">
+                </div>
+                <div>
+                    <label for="page-size" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Page Size</label>
+                    <select id="page-size" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700">
+                        <option value="a4">A4</option>
+                        <option value="letter">Letter</option>
+                        <option value="a5">A5</option>
+                        <option value="legal">Legal</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="orientation" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Orientation</label>
+                    <select id="orientation" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700">
+                        <option value="portrait">Portrait</option>
+                        <option value="landscape">Landscape</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="quality" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Quality</label>
+                    <select id="quality" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700">
+                        <option value="1.0">High</option>
+                        <option value="0.7">Medium</option>
+                        <option value="0.4">Low</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="margins" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Margins</label>
+                    <select id="margins" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700">
+                        <option value="20">Normal (20mm)</option>
+                        <option value="10">Small (10mm)</option>
+                        <option value="0">None</option>
+                    </select>
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" id="page-numbers" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                    <label for="page-numbers" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">Add page numbers</label>
+                </div>
+            </div>
+        </div>
+
+        <div id="preview-section" class="hidden bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-8 transition-colors duration-200">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold">Preview</h2>
+                <button id="clear-all" class="text-sm text-red-500 hover:text-red-700 dark:hover:text-red-400">Clear All</button>
+            </div>
+            <div id="image-previews" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                <!-- Images will be added here -->
+            </div>
+            <p id="no-images-message" class="text-center text-gray-500 py-8">No images uploaded yet</p>
+        </div>
+
+        <div class="flex justify-center">
+            <button id="convert-btn" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors" disabled>
+                Convert to PDF
+            </button>
+        </div>
+
+        <div id="download-section" class="hidden mt-8 text-center">
+            <a id="download-link" class="inline-flex items-center px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Download PDF
+            </a>
+            <button id="new-conversion" class="ml-4 px-6 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors">
+                New Conversion
+            </button>
+        </div>
+
+        <div class="mt-12 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 transition-colors duration-200">
+            <h2 class="text-xl font-semibold mb-4">Features</h2>
+            <ul class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <li class="flex items-start">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500 mr-2 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Upload multiple images (drag & drop or file selector)</span>
+                </li>
+                <li class="flex items-start">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500 mr-2 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Reorder images with drag & drop</span>
+                </li>
+                <li class="flex items-start">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500 mr-2 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Custom PDF title and page numbers</span>
+                </li>
+                <li class="flex items-start">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500 mr-2 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Multiple page sizes (A4, Letter, etc.)</span>
+                </li>
+                <li class="flex items-start">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500 mr-2 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Portrait or Landscape orientation</span>
+                </li>
+                <li class="flex items-start">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500 mr-2 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Adjustable margins</span>
+                </li>
+                <li class="flex items-start">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500 mr-2 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Quality settings (High, Medium, Low)</span>
+                </li>
+                <li class="flex items-start">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500 mr-2 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Dark/Light mode toggle</span>
+                </li>
+                <li class="flex items-start">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500 mr-2 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Fully responsive design</span>
+                </li>
+                <li class="flex items-start">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500 mr-2 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Works completely offline</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        // Initialize jsPDF
+        const { jsPDF } = window.jspdf;
+        
+        // DOM elements
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('file-input');
+        const previewSection = document.getElementById('preview-section');
+        const imagePreviews = document.getElementById('image-previews');
+        const noImagesMessage = document.getElementById('no-images-message');
+        const convertBtn = document.getElementById('convert-btn');
+        const downloadSection = document.getElementById('download-section');
+        const downloadLink = document.getElementById('download-link');
+        const newConversionBtn = document.getElementById('new-conversion');
+        const clearAllBtn = document.getElementById('clear-all');
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIconDark = document.getElementById('theme-icon-dark');
+        const themeIconLight = document.getElementById('theme-icon-light');
+        const htmlElement = document.documentElement;
+
+        // State
+        let images = [];
+        let draggedItem = null;
+
+        // Theme handling
+        if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            htmlElement.classList.add('dark');
+            themeIconDark.classList.remove('hidden');
+            themeIconLight.classList.add('hidden');
+        } else {
+            htmlElement.classList.remove('dark');
+            themeIconDark.classList.add('hidden');
+            themeIconLight.classList.remove('hidden');
+        }
+
+        themeToggle.addEventListener('click', () => {
+            htmlElement.classList.toggle('dark');
+            if (htmlElement.classList.contains('dark')) {
+                localStorage.setItem('theme', 'dark');
+                themeIconDark.classList.remove('hidden');
+                themeIconLight.classList.add('hidden');
+            } else {
+                localStorage.setItem('theme', 'light');
+                themeIconDark.classList.add('hidden');
+                themeIconLight.classList.remove('hidden');
+            }
+        });
+
+        // Dropzone events
+        dropzone.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+            fileInput.value = '';
+        });
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropzone.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight() {
+            dropzone.classList.add('active');
+        }
+
+        function unhighlight() {
+            dropzone.classList.remove('active');
+        }
+
+        dropzone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles(files);
+        });
+
+        function handleFiles(files) {
+            if (!files.length) return;
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (!file.type.match('image.*')) continue;
+                
+                const reader = new FileReader();
+                reader.onload = (function(file) {
+                    return function(e) {
+                        images.push({
+                            id: Date.now() + Math.random().toString(36).substr(2, 9),
+                            file: file,
+                            dataUrl: e.target.result
+                        });
+                        updatePreviews();
+                    };
+                })(file);
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function updatePreviews() {
+            if (images.length === 0) {
+                previewSection.classList.add('hidden');
+                convertBtn.disabled = true;
+                return;
+            }
+            
+            previewSection.classList.remove('hidden');
+            noImagesMessage.classList.add('hidden');
+            convertBtn.disabled = false;
+            
+            imagePreviews.innerHTML = '';
+            
+            images.forEach((image, index) => {
+                const preview = document.createElement('div');
+                preview.className = 'image-preview relative group rounded-md overflow-hidden bg-gray-100 dark:bg-gray-700';
+                preview.dataset.id = image.id;
+                preview.draggable = true;
+                
+                const img = document.createElement('img');
+                img.src = image.dataUrl;
+                img.className = 'w-full h-32 object-contain';
+                img.alt = image.file.name;
+                
+                const overlay = document.createElement('div');
+                overlay.className = 'absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center';
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'p-2 bg-red-500 hover:bg-red-600 rounded-full text-white';
+                deleteBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                `;
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    images = images.filter(img => img.id !== image.id);
+                    updatePreviews();
+                });
+                
+                const fileName = document.createElement('div');
+                fileName.className = 'absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white text-xs p-1 truncate';
+                fileName.textContent = image.file.name;
+                
+                overlay.appendChild(deleteBtn);
+                preview.appendChild(img);
+                preview.appendChild(overlay);
+                preview.appendChild(fileName);
+                
+                // Drag events for reordering
+                preview.addEventListener('dragstart', (e) => {
+                    draggedItem = preview;
+                    setTimeout(() => preview.classList.add('dragging'), 0);
+                });
+                
+                preview.addEventListener('dragend', () => {
+                    preview.classList.remove('dragging');
+                    draggedItem = null;
+                });
+                
+                preview.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    const afterElement = getDragAfterElement(imagePreviews, e.clientY);
+                    if (afterElement == null) {
+                        imagePreviews.appendChild(draggedItem);
+                    } else {
+                        imagePreviews.insertBefore(draggedItem, afterElement);
+                    }
+                });
+                
+                imagePreviews.appendChild(preview);
+            });
+            
+            // Update images array based on new order
+            const newOrder = Array.from(imagePreviews.children).map(child => 
+                images.find(img => img.id === child.dataset.id)
+            );
+            images = newOrder.filter(img => img !== undefined);
+        }
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.image-preview:not(.dragging)')];
+            
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        clearAllBtn.addEventListener('click', () => {
+            images = [];
+            updatePreviews();
+        });
+
+        convertBtn.addEventListener('click', async () => {
+            if (images.length === 0) return;
+            
+            convertBtn.disabled = true;
+            convertBtn.innerHTML = `
+                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Converting...
+            `;
+            
+            try {
+                const pdfTitle = document.getElementById('pdf-title').value || 'Images';
+                const pageSize = document.getElementById('page-size').value;
+                const orientation = document.getElementById('orientation').value;
+                const margins = parseInt(document.getElementById('margins').value);
+                const addPageNumbers = document.getElementById('page-numbers').checked;
+                const quality = parseFloat(document.getElementById('quality').value);
+                
+                // Create PDF
+                const pdf = new jsPDF({
+                    orientation: orientation,
+                    unit: 'mm',
+                    format: pageSize
+                });
+                
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const pageHeight = pdf.internal.pageSize.getHeight();
+                const usableWidth = pageWidth - (margins * 2);
+                const usableHeight = pageHeight - (margins * 2);
+                
+                for (let i = 0; i < images.length; i++) {
+                    if (i > 0) pdf.addPage();
+                    
+                    const img = new Image();
+                    img.src = images[i].dataUrl;
+                    
+                    await new Promise((resolve) => {
+                        img.onload = () => {
+                            // Calculate dimensions to fit the image within the page while maintaining aspect ratio
+                            let imgWidth = img.width;
+                            let imgHeight = img.height;
+                            const ratio = imgWidth / imgHeight;
+                            
+                            if (ratio > usableWidth / usableHeight) {
+                                imgWidth = usableWidth;
+                                imgHeight = imgWidth / ratio;
+                            } else {
+                                imgHeight = usableHeight;
+                                imgWidth = imgHeight * ratio;
+                            }
+                            
+                            // Center the image on the page
+                            const x = margins + (usableWidth - imgWidth) / 2;
+                            const y = margins + (usableHeight - imgHeight) / 2;
+                            
+                            pdf.addImage(img, 'JPEG', x, y, imgWidth, imgHeight, undefined, 'FAST', 0, quality);
+                            
+                            if (addPageNumbers) {
+                                pdf.setFontSize(10);
+                                pdf.setTextColor(100);
+                                pdf.text(`Page ${i + 1} of ${images.length}`, pageWidth - margins - 20, pageHeight - margins + 5);
+                            }
+                            
+                            resolve();
+                        };
+                    });
+                }
+                
+                // Save PDF
+                const pdfBlob = pdf.output('blob');
+                const pdfUrl = URL.createObjectURL(pdfBlob);
+                
+                downloadLink.href = pdfUrl;
+                downloadLink.download = `${pdfTitle}.pdf`;
+                downloadSection.classList.remove('hidden');
+                
+                // Scroll to download section
+                downloadSection.scrollIntoView({ behavior: 'smooth' });
+                
+            } catch (error) {
+                console.error('Error generating PDF:', error);
+                alert('An error occurred while generating the PDF. Please try again.');
+            } finally {
+                convertBtn.disabled = false;
+                convertBtn.textContent = 'Convert to PDF';
+            }
+        });
+
+        newConversionBtn.addEventListener('click', () => {
+            images = [];
+            updatePreviews();
+            document.getElementById('pdf-title').value = '';
+            downloadSection.classList.add('hidden');
+            previewSection.classList.add('hidden');
+        });
+    </script>
+</body>
+</html>
